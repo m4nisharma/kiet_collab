@@ -5,6 +5,7 @@ import {
     Zap, Globe, Award, TrendingUp, Target, Cpu, BookOpen,
     MonitorSmartphone, Mail
 } from 'lucide-react';
+import ShowcaseScroll from '../components/ShowcaseScroll';
 
 interface LandingPageProps {
     setShowAuth: (v: boolean) => void;
@@ -241,6 +242,11 @@ export default function LandingPage({ setShowAuth }: LandingPageProps) {
                     </div>
                 </div>
             </Section>
+
+            {/* ═══════════════════════════════════════════
+          3b. HORIZONTAL SHOWCASE SCROLL
+      ═══════════════════════════════════════════ */}
+            <ShowcaseScroll />
 
             {/* ═══════════════════════════════════════════
           4. RADAR

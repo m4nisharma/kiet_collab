@@ -484,8 +484,7 @@ export function LoginPage({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("kiet_token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       onSuccess(data.user);
     } catch (err) {
@@ -728,8 +727,7 @@ export function SignupPage({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("kiet_token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       onSuccess(data.user);
     } catch (err) {

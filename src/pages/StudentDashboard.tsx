@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Component, ReactNode } from "react";
 import ProfilePage from "./ProfilePage";
 import TeammatesPage from "./TeammatesPage";
 import TeamsPage from "./TeamsPage";
@@ -31,6 +31,72 @@ import {
   X,
   TrendingUp,
 } from "lucide-react";
+
+/* ═══════════════════════════════════════════════════
+   PAGE ERROR BOUNDARY
+═══════════════════════════════════════════════════ */
+class PageErrorBoundary extends Component<
+  { children: ReactNode; page: string },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(e: Error) {
+    return { error: e };
+  }
+  componentDidUpdate(prev: { page: string }) {
+    if (prev.page !== this.props.page) this.setState({ error: null });
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+            gap: "1rem",
+            fontFamily: "'Inter', sans-serif",
+            color: "#28292C",
+          }}
+        >
+          <div style={{ fontSize: "2.5rem" }}>⚠️</div>
+          <p style={{ fontWeight: 700, fontSize: "1rem" }}>
+            Failed to load this page
+          </p>
+          <p
+            style={{
+              color: "#96979A",
+              fontSize: "0.82rem",
+              maxWidth: 380,
+              textAlign: "center",
+              lineHeight: 1.6,
+            }}
+          >
+            {(this.state.error as Error).message}
+          </p>
+          <button
+            onClick={() => this.setState({ error: null })}
+            style={{
+              padding: "0.5rem 1.25rem",
+              borderRadius: "999px",
+              border: "1.5px solid #28292C",
+              background: "transparent",
+              cursor: "pointer",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    BRAND
@@ -1579,7 +1645,9 @@ export default function StudentDashboard({
               padding: "clamp(1.25rem, 3vw, 2rem)",
             }}
           >
-            {VIEW_MAP[activeNav]}
+            <PageErrorBoundary page={activeNav}>
+              {VIEW_MAP[activeNav]}
+            </PageErrorBoundary>
           </main>
         </div>
 

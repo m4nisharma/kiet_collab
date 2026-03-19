@@ -32,13 +32,14 @@ const B = {
 const FONT = "'Inter',-apple-system,BlinkMacSystemFont,sans-serif";
 
 const CSS = `
-.hk-fade { animation: hkFade .38s cubic-bezier(.4,0,.2,1) both; }
+.hk-fade { animation: hkFade .38s cubic-bezier(.4,0,.2,1) forwards; }
 @keyframes hkFade { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 .hk-card { transition: transform .22s cubic-bezier(.34,1.2,.64,1), box-shadow .22s, border-color .22s; }
 .hk-card:hover { transform: translateY(-4px); box-shadow: 0 14px 36px rgba(40,41,44,0.11)!important; border-color: rgba(40,41,44,0.13)!important; }
 .hk-reg-btn { transition: background .16s, transform .12s, box-shadow .16s; }
 .hk-reg-btn:hover:not(:disabled) { background: #3a3b3f!important; transform: translateY(-1px); box-shadow: 0 5px 16px rgba(40,41,44,0.22); }
 .hk-reg-btn:disabled { opacity:.55; cursor: not-allowed; }
+.hk-bar-fill { transition: width 0.9s cubic-bezier(.4,0,.2,1); }
 `;
 function StyleInject() {
   useEffect(() => {
@@ -55,6 +56,7 @@ function StyleInject() {
 }
 
 const API = (import.meta as any).env?.VITE_API_URL || "http://localhost:3000";
+const TOKEN_KEY = "kiet_token";
 
 /* ─── Types ─────────────────────────────────────── */
 interface Hackathon {
@@ -143,12 +145,16 @@ const MOCK_HACKATHONS: Hackathon[] = [
 
 /* ─── Status chip ────────────────────────────────── */
 function StatusChip({ status }: { status: Hackathon["status"] }) {
-  const map = {
+  const map: Record<string, { label: string; bg: string; color: string }> = {
     open: { label: "Open", bg: "rgba(56,161,105,0.10)", color: B.green },
     soon: { label: "Coming Soon", bg: "rgba(217,119,6,0.10)", color: B.amber },
     closed: { label: "Closed", bg: "rgba(40,41,44,0.07)", color: B.muted },
   };
-  const s = map[status];
+  const s = map[status] ?? {
+    label: status ?? "Unknown",
+    bg: "rgba(40,41,44,0.07)",
+    color: B.muted,
+  };
   return (
     <span
       style={{
@@ -318,7 +324,7 @@ function HackathonCard({
         }}
       >
         <Zap size={13} style={{ color: "#FCD34D" }} />
-        {hack.prizes.map((p, i) => (
+        {(Array.isArray(hack.prizes) ? hack.prizes : []).map((p, i) => (
           <span
             key={i}
             style={{
@@ -326,7 +332,7 @@ function HackathonCard({
               fontWeight: 700,
               color: B.dark,
               fontFamily: FONT,
-              ...(i < hack.prizes.length - 1
+              ...(i < (hack.prizes || []).length - 1
                 ? {
                     paddingRight: "0.5rem",
                     borderRight: `1px solid ${B.border}`,
@@ -470,7 +476,7 @@ function RegisterModal({
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem(TOKEN_KEY);
       const res = await fetch(`${API}/api/events/${hack.id}/register`, {
         method: "POST",
         headers: {
@@ -669,7 +675,7 @@ export default function HackathonsPage() {
 
   // Try fetching real events from backend
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(TOKEN_KEY);
     fetch(`${API}/api/events`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -700,9 +706,32 @@ export default function HackathonsPage() {
               maxTeamSize: e.maxTeamSize || 6,
               totalSeats: e.maxParticipants || 100,
               registeredCount: e.registeredCount || 0,
-              status: e.status === "upcoming" ? "soon" : e.status || "open",
-              prizes: e.prizes || [],
-              tags: e.tags || [],
+              status: (() => {
+                const raw = e.status ?? "open";
+                if (raw === "upcoming" || raw === "soon" || raw === "scheduled")
+                  return "soon";
+                if (
+                  raw === "closed" ||
+                  raw === "ended" ||
+                  raw === "completed" ||
+                  raw === "past"
+                )
+                  return "closed";
+                return "open";
+              })(),
+              prizes: Array.isArray(e.prizes)
+                ? e.prizes
+                : e.prizes
+                  ? [String(e.prizes)]
+                  : [],
+              tags: Array.isArray(e.tags)
+                ? e.tags
+                : e.tags
+                  ? String(e.tags)
+                      .split(",")
+                      .map((t: string) => t.trim())
+                      .filter(Boolean)
+                  : [],
               isRegistered: e.isRegistered || false,
             })),
           );
